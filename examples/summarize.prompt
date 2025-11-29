@@ -1,0 +1,16 @@
+---
+model: googleai/gemini-1.5-pro
+temperature: 0.5
+maxOutputTokens: 500
+input:
+  schema:
+    content: string, the content to summarize
+    style?: string, the summarization style (brief, detailed, bullet-points)
+---
+{{#if style}}
+Summarize the following content in a {{style}} style:
+{{else}}
+Summarize the following content:
+{{/if}}
+
+{{content}}

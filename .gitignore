@@ -1,0 +1,47 @@
+# Common Lisp compiled files
+*.fasl
+*.fas
+*.lib
+*.o
+*.a
+
+# SBCL-specific
+*.abcl
+*.dx64fsl
+*.dx32fsl
+*.lx64fsl
+*.lx32fsl
+*.x86f
+*.sparcf
+*.pfsl
+*.dfsl
+*.p64fsl
+*.d64fsl
+*.dx64fsl
+
+# ASDF cache
+.cache/
+
+# Quicklisp local-projects symlinks
+*.asd.lnk
+
+# Editor backups
+*~
+\#*\#
+.\#*
+*.swp
+*.swo
+
+# macOS
+.DS_Store
+
+# IDE/Editor
+.idea/
+.vscode/
+*.sublime-*
+
+# AI planning documents (ephemeral)
+history/
+
+# Claude Code plans
+.claude/plans/

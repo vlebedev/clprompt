@@ -1,0 +1,57 @@
+#!/bin/sh
+# run-prompt - Execute a .prompt file with clprompt
+#
+# Usage: run-prompt <prompt-file> [key=value ...]
+#
+# Examples:
+#   run-prompt examples/summarize.prompt content="Some text to summarize"
+#   run-prompt examples/extract-info.prompt text="John is 30 years old"
+
+set -e
+
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
+
+if [ -z "$1" ]; then
+    echo "Usage: run-prompt <prompt-file> [key=value ...]"
+    echo ""
+    echo "Examples:"
+    echo "  run-prompt examples/summarize.prompt content=\"Some text\""
+    echo "  run-prompt examples/extract-info.prompt text=\"John is 30\""
+    exit 1
+fi
+
+PROMPT_FILE="$1"
+shift
+
+# Build input plist from key=value arguments
+INPUT_ARGS=""
+for arg in "$@"; do
+    key="${arg%%=*}"
+    value="${arg#*=}"
+    INPUT_ARGS="$INPUT_ARGS :$key \"$value\""
+done
+
+# Default to empty plist if no args
+if [ -z "$INPUT_ARGS" ]; then
+    INPUT_ARGS=""
+fi
+
+sbcl --non-interactive \
+     --eval "(push #P\"$PROJECT_DIR/\" asdf:*central-registry*)" \
+     --eval "(ql:quickload :clprompt :silent t)" \
+     --eval "
+(handler-case
+    (let* ((prompt (clprompt:load-prompt \"$PROMPT_FILE\"))
+           (input (list $INPUT_ARGS))
+           (provider (make-instance 'clprompt:gemini-provider))
+           (rendered (clprompt:render-prompt prompt input)))
+      (format t \"~&--- Rendered Prompt ---~%~A~%~%\" rendered)
+      (format t \"~&--- Sending to ~A (~A) ---~%\"
+              (clprompt:provider-name provider)
+              (clprompt:provider-model provider))
+      (let ((response (clprompt:send-request provider rendered)))
+        (format t \"~&--- Response ---~%~A~%\" (getf response :content))))
+  (error (e)
+    (format *error-output* \"~&Error: ~A~%\" e)
+    (sb-ext:exit :code 1)))"
