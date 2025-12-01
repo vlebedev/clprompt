@@ -135,6 +135,103 @@ history/
 
 For more details, see README.md and QUICKSTART.md.
 
+## Multi-Agent Coordination (MCP Agent Mail)
+
+This project runs multiple coding agents in parallel (Claude Code, Codex CLI, Gemini CLI). Coordination happens via MCP Agent Mail to prevent conflicts and enable async communication.
+
+### Setup
+
+Install MCP Agent Mail (one-time):
+```bash
+curl -fsSL https://raw.githubusercontent.com/Dicklesworthstone/mcp_agent_mail/main/scripts/install.sh | bash -s -- --yes
+```
+
+### Before Starting Work
+
+1. **Register your identity** (once per session):
+   ```
+   register_agent(
+     project_key="/home/wal/projects/clprompt",
+     program="<your-cli>",  # claude-code, codex-cli, gemini-cli
+     model="<your-model>"
+   )
+   ```
+
+2. **Check inbox for messages from other agents**:
+   ```
+   fetch_inbox(
+     project_key="/home/wal/projects/clprompt",
+     agent_name="<your-name>"
+   )
+   ```
+
+3. **Reserve files before editing** (prevents conflicts):
+   ```
+   file_reservation_paths(
+     project_key="/home/wal/projects/clprompt",
+     agent_name="<your-name>",
+     paths=["src/providers/**"],
+     exclusive=true,
+     reason="bd-42",
+     ttl_seconds=3600
+   )
+   ```
+
+4. **Announce your work** (thread_id = beads issue ID):
+   ```
+   send_message(
+     project_key="/home/wal/projects/clprompt",
+     sender_name="<your-name>",
+     to=["all"],
+     subject="[bd-42] Starting provider refactor",
+     body_md="Claiming this task. Will be working on src/providers/.",
+     thread_id="bd-42"
+   )
+   ```
+
+### File Reservation Etiquette
+
+- **Always reserve before editing** - especially `src/` files
+- **Use beads issue ID as reason** - links reservations to tasks
+- **Release when done**: `release_file_reservations(...)`
+- **Check conflicts first**: if reservation fails with conflict, coordinate via messages
+- **TTL**: default 1 hour, renew with `renew_file_reservations(...)` if needed
+
+### Agent Roles
+
+| Agent | CLI | Typical Tasks |
+|-------|-----|---------------|
+| Claude | `claude` | Architecture, complex refactors, orchestration |
+| Codex | `codex` | Implementation, tests, straightforward features |
+| Gemini | `gemini` | Documentation, research, alternative implementations |
+
+### Coordination Rules
+
+1. **One agent per beads issue** at a time
+2. **Always claim issue** with `bd update <id> --status in_progress` before starting
+3. **Message other agents** when:
+   - You need input on a design decision
+   - You're blocked by their work
+   - You discovered work that affects their area
+   - You're done and releasing files
+4. **Check inbox** at session start and after long tasks
+5. **Thread IDs = Beads issue IDs** - keeps everything linked
+
+### Quick Reference
+
+```bash
+# Check who's working on what
+resource://file_reservations/clprompt?active_only=true
+
+# See all registered agents
+resource://project/clprompt
+
+# Search past messages
+search_messages(project_key="/home/wal/projects/clprompt", query="provider")
+```
+
+---
+
 ## Session-ending protocol (Landing the Plane)
 
 **When the user says "let's land the plane"**, you MUST complete ALL steps below. The plane is NOT landed until `git push` succeeds. NEVER stop before pushing. NEVER say "ready to push when you are!" - that is a FAILURE.
