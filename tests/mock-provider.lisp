@@ -49,6 +49,26 @@
                           :completion-tokens 5
                           :total-tokens 15)))))
 
+(defmethod clprompt:send-request-streaming ((provider mock-provider) prompt &key on-token
+                                            model temperature max-tokens output-schema
+                                            &allow-other-keys)
+  "Stream canned responses for testing. RESPONSES may contain lists of chunks or strings."
+  (declare (ignore model temperature max-tokens output-schema))
+  (push prompt (mock-requests provider))
+  (let* ((responses (mock-responses provider))
+         (next (when responses (pop responses))))
+    (setf (mock-responses provider) responses)
+    (let ((chunks (cond
+                    ((functionp next) (funcall next prompt))
+                    ((and (listp next) (every #'stringp next)) next)
+                    ((stringp next) (list next))
+                    (t (list "Mock streamed response")))))
+      (dolist (chunk chunks)
+        (when on-token (funcall on-token chunk)))
+      (list :content (apply #'concatenate 'string chunks)
+            :raw chunks
+            :finish-reason :done))))
+
 ;;; ============================================================================
 ;;; Helper Functions
 ;;; ============================================================================

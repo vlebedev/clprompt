@@ -23,6 +23,7 @@
                (:file "parser")
                (:file "template")
                (:file "schema")
+               (:file "define-prompt")
                (:module "providers"
                 :serial t
                 :components ((:file "protocol")
@@ -43,7 +44,9 @@
                (:file "template-tests")
                (:file "schema-tests")
                (:file "mock-provider")
-               (:file "integration-tests"))
+               (:file "integration-tests")
+               (:file "define-prompt-tests")
+               (:file "streaming-tests"))
   :perform (test-op (op c)
                     (symbol-call :fiveam :run!
                                  (find-symbol* :clprompt-tests :clprompt/tests))))

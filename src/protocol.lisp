@@ -127,6 +127,18 @@ Signals PROVIDER-ERROR on failure.
 Signals AUTHENTICATION-ERROR if API key is invalid.
 Signals RATE-LIMIT-ERROR if rate limited."))
 
+(defgeneric send-request-streaming (provider prompt &key on-token &allow-other-keys)
+  (:documentation
+   "Stream PROMPT to PROVIDER and return the final aggregated response.
+
+PROMPT is the rendered prompt string.
+ON-TOKEN is an optional callback function accepting a string chunk as tokens
+arrive from the provider stream.
+
+Implementations SHOULD invoke ON-TOKEN for each incremental token chunk and
+return a plist similar to SEND-REQUEST with at least :CONTENT containing the
+full concatenated text."))
+
 (defgeneric provider-name (provider)
   (:documentation
    "Return a string identifying the provider (e.g., \"gemini\", \"openai\")."))
@@ -233,4 +245,3 @@ Optionally validates INPUT against the schema if :VALIDATE is non-NIL."))
 Returns INPUT if valid.
 Signals VALIDATION-ERROR if invalid.
 Returns INPUT unchanged if no schema is defined."))
-

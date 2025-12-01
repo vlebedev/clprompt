@@ -52,6 +52,7 @@
 
    ;; Provider protocol
    #:send-request
+   #:send-request-streaming
    #:list-models
    #:provider-name
    #:provider-api-key
@@ -111,6 +112,7 @@
    #:execute-prompt
    #:validate-input
    #:define-prompt
+   #:with-prompt
 
    ;; Configuration
    #:*default-provider*

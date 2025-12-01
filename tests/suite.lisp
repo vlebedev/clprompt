@@ -29,6 +29,14 @@
   :description "End-to-end integration tests"
   :in clprompt-tests)
 
+(def-suite define-prompt-tests
+  :description "Tests for define-prompt macro"
+  :in clprompt-tests)
+
+(def-suite streaming-tests
+  :description "Tests for streaming provider APIs"
+  :in clprompt-tests)
+
 ;;; ============================================================================
 ;;; Test Runner
 ;;; ============================================================================

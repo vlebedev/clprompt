@@ -54,6 +54,24 @@ Returns (values response-body status-code headers)."
               nil
               (dex:response-body e)))))
 
+(defun http-post-json-stream (url body &key headers)
+  "Send a POST request with JSON body and return a response stream.
+Returns (values stream status-code headers error-body)."
+  (handler-case
+      (multiple-value-bind (stream status response-headers)
+          (dex:post url
+                    :content (yason:with-output-to-string* ()
+                               (yason:encode body))
+                    :headers (append '(("Content-Type" . "application/json"))
+                                     headers)
+                    :want-stream t)
+        (values stream status response-headers nil))
+    (dex:http-request-failed (e)
+      (values nil
+              (dex:response-status e)
+              nil
+              (dex:response-body e)))))
+
 (defun http-get-json (url &key headers)
   "Send a GET request to URL and parse JSON response.
 Returns (values response-body status-code headers)."
@@ -73,6 +91,36 @@ Returns (values response-body status-code headers)."
     (:bearer (cons "Authorization" (format nil "Bearer ~A" api-key)))
     (:x-api-key (cons "x-api-key" api-key))
     (t (cons "Authorization" api-key))))
+
+(defun consume-sse-stream (stream on-event)
+  "Consume an SSE stream, calling ON-EVENT with each data payload string.
+If ON-EVENT returns :STOP, streaming halts early. Always closes STREAM."
+  (let ((current-lines '()))
+    (labels ((flush-event ()
+               (when current-lines
+                 (let* ((payload (apply #'concatenate 'string
+                                        (nreverse current-lines)))
+                        (result (funcall on-event payload)))
+                   (setf current-lines nil)
+                   (when (eq result :stop)
+                     (return-from consume-sse-stream :stopped))))))
+      (unwind-protect
+           (loop for line = (read-line stream nil nil)
+                 while line do
+                   (cond
+                     ;; Empty line signals end of event
+                     ((string= line "")
+                      (flush-event))
+                     ;; SSE data line
+                     ((str:starts-with-p "data:" line)
+                      (push (string-trim " " (subseq line 5)) current-lines))
+                     ;; Other lines - keep as-is
+                     (t
+                      (push line current-lines))))
+        (close stream :abort t))
+      ;; Flush any trailing event when stream closes without blank line
+      (flush-event)
+      :done)))
 
 ;;; ============================================================================
 ;;; Default Method Implementations
